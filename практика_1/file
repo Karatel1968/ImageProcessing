@@ -1,0 +1,77 @@
+import numpy as np
+import cv2
+import matplotlib.pyplot as plt
+
+#1
+image = cv2.imread('sar_1_gray.jpg', cv2.IMREAD_GRAYSCALE)
+
+plt.imshow(image)
+
+#2
+histSize = 256
+histRange = (0, 256)
+accumulate = False
+
+b_hist = cv2.calcHist([image], [0], None, [histSize], histRange)
+
+plt.plot(b_hist)
+
+#3
+def gamma_correction(image, gamma=1.0):
+    image_normalized = image.astype(np.float32) / 255.0
+    
+    corrected_image = np.power(image_normalized, gamma)
+    
+    corrected_image = (corrected_image * 255).astype(np.uint8)
+    
+    return corrected_image
+
+image = cv2.imread('sar_1_gray.jpg') 
+
+gamma_05 = gamma_correction(image, gamma=0.5)
+gamma_10 = gamma_correction(image, gamma=1.0)  
+gamma_15 = gamma_correction(image, gamma=1.5)  
+gamma_20 = gamma_correction(image, gamma=2.0)
+
+plt.imshow(gamma_05)
+plt.imshow(gamma_10)
+plt.imshow(gamma_15)
+plt.imshow(gamma_20)
+
+#4
+from skimage.metrics import structural_similarity, mean_squared_error
+
+min_side = min(image.shape)
+win_size = min(7, min_side)  
+if win_size % 2 == 0:  
+    win_size -= 1
+if win_size < 3:  
+    win_size = 3
+
+
+(ssim, diff) = structural_similarity(image, gamma_20, win_size=win_size, full=True)
+diff = (diff * 255).astype("uint8")
+print("SSIM: {}".format(ssim))
+
+plt.imshow(diff)
+
+mse = mean_squared_error(image, gamma_20)
+print("MSE: {}".format(mse))
+
+#5
+#image = image.astype(np.uint8)
+
+#eq_gray = cv2.equalizeHist(image)
+#plt.imshow(eq_gray, cmap="gray")
+#plt.imshow(image, cmap="gray")
+
+#6
+_,thresh1 = cv2.threshold(image,200,255,cv2.THRESH_BINARY)
+_, thresh_100 = cv2.threshold(image, 100, 255, cv2.THRESH_BINARY)
+_, thresh_150 = cv2.threshold(image, 150, 255, cv2.THRESH_BINARY)
+_, thresh_200 = cv2.threshold(image, 200, 255, cv2.THRESH_BINARY)
+_, thresh_binary_inv = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY_INV)
+_, thresh_trunc = cv2.threshold(image, 127, 255, cv2.THRESH_TRUNC)
+_, thresh_tozero = cv2.threshold(image, 127, 255, cv2.THRESH_TOZERO)
+plt.imshow(thresh1, cmap='gray')
+plt.imshow(thresh_100, cmap='gray')

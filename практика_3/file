@@ -1,0 +1,56 @@
+import numpy as np
+import cv2
+import matplotlib.pyplot as plt
+import copy
+
+image = cv2.imread('sar_3.jpg')
+image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
+
+#plt.imshow(image_gray, cmap="gray")
+
+canny = cv2.Canny(image_gray,50,150,apertureSize = 3)
+lines = cv2.HoughLines(canny, 1, np.pi / 180, 190)
+
+import math 
+image_with_lines = image_rgb.copy()
+image_longest_only = image_rgb.copy()
+
+if lines is not None:
+        max_length = 0
+        longest_line = None
+        for i in range(len(lines)):
+            rho = lines[i][0][0]
+            theta = lines[i][0][1]
+            a = math.cos(theta)
+            b = math.sin(theta)
+            x0 = a * rho
+            y0 = b * rho
+            pt1 = (int(x0 + 1000*(-b)), int(y0 + 1000*(a)))
+            pt2 = (int(x0 - 1000*(-b)), int(y0 - 1000*(a)))
+            length = math.sqrt((pt2[0] - pt1[0])**2 + (pt2[1] - pt1[1])**2)
+            cv2.line(image_with_lines, pt1, pt2, (0,0,255), 3, cv2.LINE_AA)
+            if length > max_length:
+                max_length = length
+                longest_line = (pt1, pt2)
+        if longest_line is not None:
+            pt1, pt2 = longest_line
+            cv2.line(image_longest_only, longest_line[0], longest_line[1], (0, 255, 0), 4, cv2.LINE_AA)
+            print(f"Длина самой протяженной линии: {max_length:.2f} пикселей")
+            
+plt.imshow(image_with_lines)
+
+#3
+bin_img = copy.deepcopy(image_gray)
+T  = 50
+bin_img[image_gray < T] = 0
+bin_img[image_gray >= T] = 255
+
+plt.imshow(bin_img, cmap="gray")
+
+_,th2 = cv2.threshold(image_gray,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+plt.imshow(th2, cmap="gray")
+
+th3 = cv2.adaptiveThreshold(image_gray,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,\
+            cv2.THRESH_BINARY,71,21)
+plt.imshow(th3, cmap="gray")
